@@ -7,6 +7,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -17,10 +18,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     ListView headlineView;
-
+    static ArrayList<String> titles = new ArrayList<String>();
+    static ArrayAdapter arrayAdapter;
 
 
     @Override
@@ -29,6 +32,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         headlineView = findViewById(R.id.headlineView);
+
+        arrayAdapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, titles);
+        headlineView.setAdapter(arrayAdapter);
 
         try {
             DownloadJSON downloadJSON = new DownloadJSON();
@@ -83,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
                 String articles = jsonObject.getString("articles");
 
                 JSONArray Articles = new JSONArray(articles);
-                
+
 
             } catch(Exception e) {
                 Toast.makeText(getApplicationContext(), "Could not find weather :(", Toast.LENGTH_SHORT).show();

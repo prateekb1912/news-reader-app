@@ -20,6 +20,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
+import javax.net.ssl.HttpsURLConnection;
+
 public class MainActivity extends AppCompatActivity {
     ListView headlineView;
     static ArrayList<String> titles = new ArrayList<String>();
@@ -38,9 +40,9 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             DownloadJSON downloadJSON = new DownloadJSON();
-            downloadJSON.execute("https://newsapi.org/v2/top-headlines?country=in&apiKey=c117d0af3ee44794bffac3058e44cfa7");
+            downloadJSON.execute("https://gnews.io/api/v4/top-headlines?country=in&lang=en&token=b8ddfa150c749547938d48d8358b558b");
         } catch(Exception e) {
-            Toast.makeText(getApplicationContext(), "Could not find weather :(", Toast.LENGTH_SHORT).show();
+            Log.i("Error", "BOOOOOOO");
             e.printStackTrace();
         }
     }
@@ -51,15 +53,14 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(String... urls) {
             String result = "";
             URL url;
-            HttpURLConnection urlConnection = null;
+            HttpsURLConnection urlConnection = null;
 
             try {
                 url = new URL (urls[0]);
-                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection = (HttpsURLConnection) url.openConnection();
 
                 InputStream inputStream = urlConnection.getInputStream();
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-
                 int data = inputStreamReader.read();
 
                 while(data != -1) {
@@ -68,33 +69,47 @@ public class MainActivity extends AppCompatActivity {
 
                     data = inputStreamReader.read();
                 }
+                JSONObject jsonObject = new JSONObject(result);
+                Integer totalArticles = jsonObject.getInt("totalArticles");
+                String articles = jsonObject.getString("articles");
+
+                JSONArray Articles = new JSONArray(articles);
+                int maxHeadlines = 10;
+
+                for(int i=0; i<maxHeadlines; i++) {
+                    JSONObject articleObject = Articles.getJSONObject(i);
+                    String title = articleObject.getString("title");
+                    String articleURL = articleObject.getString("url");
+                    String imageURL = articleObject.getString("image");
+
+                    Log.i("URL"+Integer.toString(i), articleURL);
+                }
 
                 return result;
 
             } catch(Exception e) {
-                Log.i("ERROR","Internet issue maybe.");
                 e.printStackTrace();
                 return null;
             }
 
         }
 
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            try {
-                JSONObject jsonObject = new JSONObject(s);
-
-                int totalResults = jsonObject.getInt("totalResults");
-                String articles = jsonObject.getString("articles");
-
-                JSONArray Articles = new JSONArray(articles);
-
-
-            } catch(Exception e) {
-                Toast.makeText(getApplicationContext(), "Could not find weather :(", Toast.LENGTH_SHORT).show();
-                e.printStackTrace();
-            }
-        }
+//        @Override
+//        protected void onPostExecute(String s) {
+//            super.onPostExecute(s);
+//            try {
+//                JSONObject jsonObject = new JSONObject(s);
+//
+//                int totalResults = jsonObject.getInt("totalResults");
+//                String articles = jsonObject.getString("articles");
+//
+//                JSONArray Articles = new JSONArray(articles);
+//
+//
+//            } catch(Exception e) {
+//                Toast.makeText(getApplicationContext(), "Could not find weather :(", Toast.LENGTH_SHORT).show();
+//                e.printStackTrace();
+//            }
+//        }
     }
 }

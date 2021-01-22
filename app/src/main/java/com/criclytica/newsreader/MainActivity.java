@@ -3,6 +3,8 @@ package com.criclytica.newsreader;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
     ListView headlineView;
     static ArrayList<String> titles = new ArrayList<String>();
     static ArrayAdapter arrayAdapter;
+    SQLiteDatabase articlesDB;
 
 
     @Override
@@ -35,8 +38,9 @@ public class MainActivity extends AppCompatActivity {
 
         headlineView = findViewById(R.id.headlineView);
 
-        arrayAdapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, titles);
-        headlineView.setAdapter(arrayAdapter);
+        articlesDB= this.openOrCreateDatabase("Articles", MODE_PRIVATE, null);
+
+        articlesDB.execSQL("CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY, title VARCHAR, content VARCHAR)");
 
         try {
             DownloadJSON downloadJSON = new DownloadJSON();
@@ -45,6 +49,9 @@ public class MainActivity extends AppCompatActivity {
             Log.i("Error", "BOOOOOOO");
             e.printStackTrace();
         }
+
+        arrayAdapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, titles);
+        headlineView.setAdapter(arrayAdapter);
     }
 
     public class DownloadJSON extends AsyncTask<String, Void, String> {
@@ -76,13 +83,35 @@ public class MainActivity extends AppCompatActivity {
                 JSONArray Articles = new JSONArray(articles);
                 int maxHeadlines = 10;
 
+                articlesDB.execSQL("DELETE FROM articles");
+
                 for(int i=0; i<maxHeadlines; i++) {
                     JSONObject articleObject = Articles.getJSONObject(i);
                     String title = articleObject.getString("title");
                     String articleURL = articleObject.getString("url");
-                    String imageURL = articleObject.getString("image");
 
-                    Log.i("URL"+Integer.toString(i), articleURL);
+                    url = new URL (articleURL);
+                    urlConnection = (HttpsURLConnection) url.openConnection();
+
+                    inputStream = urlConnection.getInputStream();
+                    inputStreamReader = new InputStreamReader(inputStream);
+                    data = inputStreamReader.read();
+
+                    String content = "";
+
+                    while(data != -1) {
+                        char current = (char) data;
+                        content += current;
+
+                        data = inputStreamReader.read();
+                    }
+
+                    String sql = "INSERT INTO articles (title, content) VALUES(?, ?)";
+                    SQLiteStatement statement = articlesDB.compileStatement(sql);
+                    statement.bindString(1, title);
+                    statement.bindString(2, content);
+
+                    statement.execute();
                 }
 
                 return result;
